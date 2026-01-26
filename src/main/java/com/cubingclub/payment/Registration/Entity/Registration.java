@@ -30,26 +30,42 @@ public class Registration {
     private String enName;
     private String email;
     private String phone;
+    @Column(nullable = false)
     private String cckId;
     private String wcaId;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthDate;
     private String emergencyPhone;
     private String emergencyContact;
+    @Column(nullable = false)
     private Long competitionId;
     private String competitionName;
     @ElementCollection(fetch = FetchType.LAZY)
     @BatchSize(size = 100)
     @Builder.Default
     private List<String> selectedEvents=new ArrayList<>();
+    @Column(nullable = false)
     private Integer totalFee;
-    private PaymentStatus paymentStatus;
-    private RegistrationStatus registrationStatus;
-    private Boolean needRfCard;
+    @Builder.Default
+    private PaymentStatus paymentStatus=PaymentStatus.PENDING;
+    @Builder.Default
+    private RegistrationStatus registrationStatus=RegistrationStatus.PENDING;
+    @Builder.Default
+    private Boolean needRfCard=true;
     @CreatedDate
     private LocalDateTime createdAt;
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    public void updateSelectedEvents(List<String> selectedEvents, Integer totalFee){
+        this.selectedEvents.clear();
+        this.selectedEvents.addAll(selectedEvents);
+        this.totalFee=totalFee;
+    }
+
+    public void updateNeedRfCard(Boolean needRfCard){
+        this.needRfCard=needRfCard;
+    }
 
     public void updatePaymentStatus(PaymentStatus paymentStatus){
         this.paymentStatus=paymentStatus;
