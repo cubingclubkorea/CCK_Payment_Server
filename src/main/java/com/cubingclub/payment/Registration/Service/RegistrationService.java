@@ -4,6 +4,7 @@ import com.cubingclub.payment.Auth.DTO.AccountDTO;
 import com.cubingclub.payment.Auth.Service.AuthService;
 import com.cubingclub.payment.Exception.Entity.ErrorCode;
 import com.cubingclub.payment.Exception.Exceptions.CustomizedException;
+import com.cubingclub.payment.Mail.Service.MailAsyncService;
 import com.cubingclub.payment.Registration.Component.ClientComponent;
 import com.cubingclub.payment.Registration.DTO.*;
 import com.cubingclub.payment.Registration.Entity.PaymentStatus;
@@ -16,7 +17,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,6 +34,8 @@ public class RegistrationService {
     private final ClientComponent clientComponent;
     private final RegistrationRepository registrationRepository;
     private final AuthService authService;
+    private final MailAsyncService mailAsyncService;
+    private final SpringTemplateEngine springTemplateEngine;
 
     public Page<RegistrationDTO> getRegistrationByComp(Long competitionId, RegistrationStatus registrationStatus, Pageable pageable) {
         return registrationRepository.findByCompetitionIdAndRegistrationStatusOrderByCreatedAtDesc(competitionId, registrationStatus, pageable)
@@ -52,8 +59,8 @@ public class RegistrationService {
             throw new CustomizedException(ErrorCode.REGISTRATION_ALREADY_EXISTS);
         }
         Integer totalFee=getTotalFee(registrationCreateDTO.getCompetitionId(), registrationCreateDTO.getSelectedEvents());
-        boolean needRfCard=!authService.existRfid(accountDTO.getCckId());
-        registrationRepository.save(registrationCreateDTO.toEntity(
+        boolean needRfCard=!authService.existRfid(accountDTO.getCckId(), token);
+        Registration registration=registrationRepository.save(registrationCreateDTO.toEntity(
                 accountDTO.getName(),
                 accountDTO.getEnName(),
                 accountDTO.getEmail(),
@@ -63,6 +70,18 @@ public class RegistrationService {
                 totalFee,
                 needRfCard
         ));
+        CompetitionDTO competitionDTO=clientComponent.getCompetitionDTO(registrationCreateDTO.getCompetitionId());
+        String eventList= String.join(", ", registrationCreateDTO.getSelectedEvents());
+        sendPaymentMail(
+                accountDTO.getEmail(),
+                competitionDTO.getCompName(),
+                competitionDTO.getCompDateStart(),
+                competitionDTO.getLocation(),
+                accountDTO.getName(),
+                eventList,
+                registration.getCreatedAt(),
+                totalFee
+        );
     }
 
     public void updateRegistration(RegistrationUpdateEventsDTO registrationUpdateEventsDTO, String token) throws Exception {
@@ -127,5 +146,19 @@ public class RegistrationService {
                 .sum();
 
         return eventFee+competition.getBaseFee();
+    }
+
+    private void sendPaymentMail(String email, String compName, LocalDate compDate, String compLocation, String playerName, String selectedEvents, LocalDateTime createdAt, Integer totalFee) {
+        Context context=new Context();
+        context.setVariable("compName", compName);
+        context.setVariable("compDate", compDate);
+        context.setVariable("compLocation", compLocation);
+        context.setVariable("playerName", playerName);
+        context.setVariable("selectedEvents", selectedEvents);
+        context.setVariable("createdAt", createdAt);
+        context.setVariable("totalFee", totalFee);
+
+        String htmlContent = springTemplateEngine.process("payment", context);
+        mailAsyncService.sendEmail(email, compName+" 결제 안내", htmlContent);
     }
 }

@@ -51,8 +51,8 @@ public class AuthService {
         return authClientService.getMyInfo(token);
     }
 
-    public Boolean existRfid(String cckID){
-        return authClientService.existRfid(cckID);
+    public Boolean existRfid(String cckID, String token){
+        return authClientService.existRfid(cckID, token);
     }
 
     public PlayerInfo getPlayerInfo(String cckId) {

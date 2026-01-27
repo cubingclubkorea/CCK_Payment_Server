@@ -12,6 +12,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
@@ -120,16 +121,25 @@ public class AuthClientService {
         return response.getBody();
     }
 
-    public Boolean existRfid(String cckId){
+    public Boolean existRfid(String cckId, String token){
         HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<Void> response = restTemplate.exchange(
-                authUri + "/api/rfid/"+cckId,
-                HttpMethod.GET,
-                entity,
-                Void.class
-        );
-        return response.getStatusCode() != HttpStatus.NOT_FOUND;
+
+        try {
+            ResponseEntity<Void> response = restTemplate.exchange(
+                    authUri + "/api/rfid/exist/" + cckId,
+                    HttpMethod.GET,
+                    entity,
+                    Void.class
+            );
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                return false;
+            }
+            throw e; // 나머지는 진짜 에러
+        }
     }
 
     public PlayerInfo getPlayerInfo(String cckId) {
