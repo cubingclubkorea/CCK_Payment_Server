@@ -1,5 +1,6 @@
 package com.cubingclub.payment.Registration.Controller;
 
+import com.cubingclub.payment.Auth.DTO.JwtToken;
 import com.cubingclub.payment.Registration.DTO.RegistrationCreateDTO;
 import com.cubingclub.payment.Registration.DTO.RegistrationDTO;
 import com.cubingclub.payment.Registration.DTO.RegistrationDetailedDTO;
@@ -20,9 +21,9 @@ import org.springframework.web.bind.annotation.*;
 public class RegistrationController {
     private final RegistrationService registrationService;
 
-    @GetMapping("/user/{cckId}")
-    public ResponseEntity<Page<RegistrationDTO>> getRegistrationsByUser(@PathVariable String cckId, Pageable pageable) {
-        return ResponseEntity.ok(registrationService.getRegistrationByUser(cckId, pageable));
+    @GetMapping("/user")
+    public ResponseEntity<Page<RegistrationDTO>> getRegistrationsByUser(@JwtToken String token, Pageable pageable) {
+        return ResponseEntity.ok(registrationService.getRegistrationByUser(token, pageable));
     }
 
     @GetMapping("/comp/{compIdx}/pending")
@@ -41,19 +42,19 @@ public class RegistrationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<RegistrationDetailedDTO> getRegistrationById(@PathVariable Long id) {
-        return ResponseEntity.ok(registrationService.getRegistrationById(id));
+    public ResponseEntity<RegistrationDetailedDTO> getRegistrationById(@PathVariable Long id, @JwtToken String token) throws Exception {
+        return ResponseEntity.ok(registrationService.getRegistrationById(id, token));
     }
 
     @PostMapping("")
-    public ResponseEntity<Void> createRegistration(@RequestBody RegistrationCreateDTO registrationCreateDTO) {
-        registrationService.createRegistration(registrationCreateDTO);
+    public ResponseEntity<Void> createRegistration(@RequestBody RegistrationCreateDTO registrationCreateDTO, @JwtToken String token) {
+        registrationService.createRegistration(registrationCreateDTO, token);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/events")
-    public ResponseEntity<Void> updateRegistrationEvents(@RequestBody RegistrationUpdateEventsDTO registrationUpdateEventsDTO) {
-        registrationService.updateRegistration(registrationUpdateEventsDTO);
+    public ResponseEntity<Void> updateRegistrationEvents(@RequestBody RegistrationUpdateEventsDTO registrationUpdateEventsDTO, @JwtToken String token) throws Exception {
+        registrationService.updateRegistration(registrationUpdateEventsDTO, token);
         return ResponseEntity.ok().build();
     }
 

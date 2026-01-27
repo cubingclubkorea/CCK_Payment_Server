@@ -26,6 +26,7 @@ public enum ErrorCode {
     REGISTRATION_ALREADY_APPROVED(HttpStatus.BAD_REQUEST, "REGISTRATION-003", "이미 접수가 승인되었습니다."),
     REGISTRATION_ALREADY_PAID(HttpStatus.BAD_REQUEST, "REGISTRATION-004", "결제 완료된 등록은 취소할 수 없습니다. 관리자에게 문의하세요."),
     REGISTRATION_INVALID_SELECTED_EVENTS(HttpStatus.BAD_REQUEST, "REGISTRATION-005", "유효하지 않은 이벤트가 선택되었습니다."),
+    REGISTRATION_FORBIDDEN(HttpStatus.FORBIDDEN, "REGISTRATION-006", "본인 접수가 아닙니다."),
 
     RECORD_NOT_FOUND(HttpStatus.BAD_REQUEST, "RECORD-001", "기록 정보가 없습니다."),
     RECORD_ATTEMPT_NOT_FOUND(HttpStatus.BAD_REQUEST, "RECORD-002", "시도 정보가 없습니다."),

@@ -1,5 +1,7 @@
 package com.cubingclub.payment.Registration.Service;
 
+import com.cubingclub.payment.Auth.DTO.AccountDTO;
+import com.cubingclub.payment.Auth.Service.AuthService;
 import com.cubingclub.payment.Exception.Entity.ErrorCode;
 import com.cubingclub.payment.Exception.Exceptions.CustomizedException;
 import com.cubingclub.payment.Registration.Component.ClientComponent;
@@ -26,31 +28,49 @@ import java.util.stream.Collectors;
 public class RegistrationService {
     private final ClientComponent clientComponent;
     private final RegistrationRepository registrationRepository;
+    private final AuthService authService;
 
     public Page<RegistrationDTO> getRegistrationByComp(Long competitionId, RegistrationStatus registrationStatus, Pageable pageable) {
         return registrationRepository.findByCompetitionIdAndRegistrationStatusOrderByCreatedAtDesc(competitionId, registrationStatus, pageable)
                 .map(RegistrationDTO::new);
     }
 
-    public Page<RegistrationDTO> getRegistrationByUser(String cckId, Pageable pageable) {
-        return registrationRepository.findByCckIdOrderByCreatedAtDesc(cckId, pageable)
+    public Page<RegistrationDTO> getRegistrationByUser(String token, Pageable pageable) {
+        AccountDTO accountDTO=authService.getMyInfo(token);
+        return registrationRepository.findByCckIdOrderByCreatedAtDesc(accountDTO.getCckId(), pageable)
                 .map(RegistrationDTO::new);
     }
 
-    public RegistrationDetailedDTO getRegistrationById(Long id) {
-        return new RegistrationDetailedDTO(registrationRepository.findById(id).orElseThrow(()->new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND)));
+    public RegistrationDetailedDTO getRegistrationById(Long id, String token) throws Exception {
+        String cckId=authService.extractCckId(token);
+        return new RegistrationDetailedDTO(registrationRepository.findByIdAndCckId(id, cckId).orElseThrow(()->new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND)));
     }
 
-    public void createRegistration(RegistrationCreateDTO registrationCreateDTO){
-        if(isRegistered(registrationCreateDTO.getCckId(), registrationCreateDTO.getCompetitionId())){
+    public void createRegistration(RegistrationCreateDTO registrationCreateDTO, String token){
+        AccountDTO accountDTO=authService.getMyInfo(token);
+        if(isRegistered(accountDTO.getCckId(), registrationCreateDTO.getCompetitionId())){
             throw new CustomizedException(ErrorCode.REGISTRATION_ALREADY_EXISTS);
         }
-        registrationCreateDTO.setTotalFee(getTotalFee(registrationCreateDTO.getCompetitionId(), registrationCreateDTO.getSelectedEvents()));
-        registrationRepository.save(registrationCreateDTO.toEntity());
+        Integer totalFee=getTotalFee(registrationCreateDTO.getCompetitionId(), registrationCreateDTO.getSelectedEvents());
+        boolean needRfCard=!authService.existRfid(accountDTO.getCckId());
+        registrationRepository.save(registrationCreateDTO.toEntity(
+                accountDTO.getName(),
+                accountDTO.getEnName(),
+                accountDTO.getEmail(),
+                accountDTO.getPhoneNum(),
+                accountDTO.getCckId(),
+                accountDTO.getBirthDate(),
+                totalFee,
+                needRfCard
+        ));
     }
 
-    public void updateRegistration(RegistrationUpdateEventsDTO registrationUpdateEventsDTO){
+    public void updateRegistration(RegistrationUpdateEventsDTO registrationUpdateEventsDTO, String token) throws Exception {
+        String cckId=authService.extractCckId(token);
         Registration registration=registrationRepository.findById(registrationUpdateEventsDTO.getRegistrationId()).orElseThrow(()->new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND));
+        if(!cckId.equals(registration.getCckId())){
+            throw new CustomizedException(ErrorCode.REGISTRATION_FORBIDDEN);
+        }
         registration.updateSelectedEvents(registrationUpdateEventsDTO.getSelectedEvents(), getTotalFee(registration.getCompetitionId(), registrationUpdateEventsDTO.getSelectedEvents()));
     }
 
@@ -101,9 +121,11 @@ public class RegistrationService {
             throw new CustomizedException(ErrorCode.REGISTRATION_INVALID_SELECTED_EVENTS);
         }
 
-        return competition.getEventFeeList().stream()
+        Integer eventFee= competition.getEventFeeList().stream()
                 .filter(fee -> selectedEvents.contains(fee.getEventName()))
                 .mapToInt(EventFeeDTO::getEventFee)
                 .sum();
+
+        return eventFee+competition.getBaseFee();
     }
 }

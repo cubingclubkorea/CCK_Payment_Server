@@ -52,23 +52,16 @@ public class SecurityConfig{
                         .csrfTokenRequestHandler(requestHandler)
                         .ignoringRequestMatchers(
                                 "/auth/token",           // 인가 코드로 토큰 발급 (GET 파라미터)
-                                "/recorder/**",          // JWT 인증 사용
-                                "/scramble/**",          // JWT 인증 사용
-                                "/comp/**",              // JWT 인증 사용
-                                "/event/**",             // JWT 인증 사용
-                                "/round/**",             // JWT 인증 사용
-                                "/advance/**",           // JWT 인증 사용
-                                "/record/**"             // JWT 인증 사용
+                                "/registration/**"        // JWT 인증 사용
                         )
                 )
                 .cors(cors->cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/recorder/**").hasAuthority("SCOPE_limited.read")
-                        .requestMatchers("/scramble/**").hasAnyRole("ROOT", "SCRAMBLER")
-                        .requestMatchers(HttpMethod.POST,"/comp/**", "/event/**","/round","/advance/**","/record/**").hasAnyRole("ROOT","ADMIN")
-                        .requestMatchers(HttpMethod.PUT,"/comp/**", "/event/**","/round","/advance/**","/record/**").hasAnyRole("ROOT","ADMIN")
-                        .requestMatchers(HttpMethod.PATCH,"/comp/**", "/event/**","/round","/advance/**","/record/**").hasAnyRole("ROOT","ADMIN")
-                        .requestMatchers(HttpMethod.DELETE,"/comp/**","/round/**","/record/**").hasAnyRole("ROOT","ADMIN")
+                        .requestMatchers(HttpMethod.GET,"/registration/user", "/registration/{id}").authenticated()
+                        .requestMatchers(HttpMethod.POST,"/registration").authenticated()
+                        .requestMatchers(HttpMethod.PATCH,"/registration/events").authenticated()
+                        .requestMatchers(HttpMethod.PATCH,"/registration/{id}/approve", "/registration/{id}/cancel","/registration/{id}/refund").hasAnyRole("ROOT","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,"/registration/**").hasAnyRole("ROOT","ADMIN")
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .anyRequest().permitAll()
                 )

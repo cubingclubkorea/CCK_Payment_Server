@@ -120,6 +120,18 @@ public class AuthClientService {
         return response.getBody();
     }
 
+    public Boolean existRfid(String cckId){
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        ResponseEntity<Void> response = restTemplate.exchange(
+                authUri + "/api/rfid/"+cckId,
+                HttpMethod.GET,
+                entity,
+                Void.class
+        );
+        return response.getStatusCode() != HttpStatus.NOT_FOUND;
+    }
+
     public PlayerInfo getPlayerInfo(String cckId) {
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
