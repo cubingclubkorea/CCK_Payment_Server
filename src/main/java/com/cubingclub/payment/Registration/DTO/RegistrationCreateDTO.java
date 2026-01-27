@@ -19,13 +19,14 @@ public class RegistrationCreateDTO {
     private Long competitionId;
     @NotBlank
     private String competitionName;
+    private String phone;
     private String wcaId;
     private String emergencyPhone;
     private String emergencyContact;
     @NotEmpty
     private List<String> selectedEvents;
 
-    public Registration toEntity(String name, String enName, String email, String phone, String cckId, LocalDate birthDate, Integer totalFee, Boolean needRfCard){
+    public Registration toEntity(String name, String enName, String email, String phoneNum, String cckId, LocalDate birthDate, Integer totalFee, Boolean needRfCard){
         return Registration.builder()
                 .competitionId(competitionId)
                 .competitionName(competitionName)

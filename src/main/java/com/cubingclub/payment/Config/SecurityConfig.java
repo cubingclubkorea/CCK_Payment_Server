@@ -40,6 +40,8 @@ public class SecurityConfig{
     private String oAuthUrl;
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
+    @Value("${cors.allowed-methods}")
+    private String allowedMethods;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -59,8 +61,8 @@ public class SecurityConfig{
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.GET,"/registration/user", "/registration/{id}").authenticated()
                         .requestMatchers(HttpMethod.POST,"/registration").authenticated()
-                        .requestMatchers(HttpMethod.PATCH,"/registration/events").authenticated()
-                        .requestMatchers(HttpMethod.PATCH,"/registration/{id}/approve", "/registration/{id}/cancel","/registration/{id}/refund").hasAnyRole("ROOT","ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,"/registration/events", "/registration/{id}/cancel").authenticated()
+                        .requestMatchers(HttpMethod.PATCH,"/registration/{id}/approve","/registration/{id}/refund").hasAnyRole("ROOT","ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/registration/**").hasAnyRole("ROOT","ADMIN")
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .anyRequest().permitAll()
@@ -75,7 +77,7 @@ public class SecurityConfig{
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

@@ -9,8 +9,8 @@ import org.springframework.web.client.RestTemplate;
 
 @Component
 public class ClientComponent {
-    @Value("${ranking.uri}")
-    private String rankingUri;
+    @Value("${ranking.url}")
+    private String rankingUrl;
 
     private final RestTemplate restTemplate;
 
@@ -20,6 +20,6 @@ public class ClientComponent {
 
     @Cacheable(value = "competition", key = "#competitionId")
     public CompetitionDTO getCompetitionDTO(Long competitionId){
-        return restTemplate.getForObject(rankingUri + "/comp/{competitionId}", CompetitionDTO.class, competitionId);
+        return restTemplate.getForObject(rankingUrl + "/comp/{competitionId}", CompetitionDTO.class, competitionId);
     }
 }
