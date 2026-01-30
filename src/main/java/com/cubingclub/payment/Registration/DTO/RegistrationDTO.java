@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -32,7 +33,7 @@ public class RegistrationDTO {
         this.name=entity.getName();
         this.enName=entity.getEnName();
         this.cckId=entity.getCckId();
-        this.selectedEvents=entity.getSelectedEvents();
+        this.selectedEvents=new ArrayList<>(entity.getSelectedEvents());
         this.totalFee=entity.getTotalFee();
         this.paymentStatus=entity.getPaymentStatus();
         this.registrationStatus=entity.getRegistrationStatus();

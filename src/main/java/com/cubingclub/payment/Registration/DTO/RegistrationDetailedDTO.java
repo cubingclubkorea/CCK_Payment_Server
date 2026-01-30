@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -49,7 +50,7 @@ public class RegistrationDetailedDTO {
         this.selectedEvents=entity.getSelectedEvents();
         this.totalFee=entity.getTotalFee();
         this.paymentStatus=entity.getPaymentStatus();
-        this.registrationStatus=entity.getRegistrationStatus();
+        this.selectedEvents=new ArrayList<>(entity.getSelectedEvents());
         this.needRfCard=entity.getNeedRfCard();
         this.createdAt=entity.getCreatedAt();
         this.updatedAt=entity.getUpdatedAt();
