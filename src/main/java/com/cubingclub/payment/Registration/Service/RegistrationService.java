@@ -55,8 +55,13 @@ public class RegistrationService {
 
     public void createRegistration(RegistrationCreateDTO registrationCreateDTO, String token){
         AccountDTO accountDTO=authService.getMyInfo(token);
+        CompetitionDTO competitionDTO=clientComponent.getCompetitionDTO(registrationCreateDTO.getCompetitionId());
         if(isRegistered(accountDTO.getCckId(), registrationCreateDTO.getCompetitionId())){
             throw new CustomizedException(ErrorCode.REGISTRATION_ALREADY_EXISTS);
+        }
+        LocalDateTime now=LocalDateTime.now();
+        if(now.isBefore(competitionDTO.getJoinDateStart()) || now.isAfter(competitionDTO.getJoinDateEnd())){
+            throw new CustomizedException(ErrorCode.REGISTRATION_NOT_IN_TIME);
         }
         Integer totalFee=getTotalFee(registrationCreateDTO.getCompetitionId(), registrationCreateDTO.getSelectedEvents());
         boolean needRfCard=!authService.existRfid(accountDTO.getCckId(), token);
@@ -70,7 +75,7 @@ public class RegistrationService {
                 totalFee,
                 needRfCard
         ));
-        CompetitionDTO competitionDTO=clientComponent.getCompetitionDTO(registrationCreateDTO.getCompetitionId());
+
         String eventList= String.join(", ", registrationCreateDTO.getSelectedEvents());
         sendPaymentMail(
                 accountDTO.getEmail(),
@@ -94,22 +99,31 @@ public class RegistrationService {
     }
 
     public void approveRegistration(Long id){
-        Registration registration=registrationRepository.findById(id).orElseThrow(()->new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND));
-        if(registration.getRegistrationStatus()!=RegistrationStatus.PENDING && registration.getPaymentStatus()!=PaymentStatus.PENDING){
-            throw new CustomizedException(ErrorCode.REGISTRATION_ALREADY_APPROVED);
-        }
+        Registration registration = registrationRepository.findById(id)
+                .orElseThrow(() -> new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND));
+
+        validateMove(registration, PaymentStatus.PAID, RegistrationStatus.CONFIRMED);
+
         registration.updatePaymentStatus(PaymentStatus.PAID);
         registration.updateRegistrationStatus(RegistrationStatus.CONFIRMED);
     }
 
     public void cancelRegistration(Long id){
-        Registration registration=registrationRepository.findById(id).orElseThrow(()->new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND));
+        Registration registration = registrationRepository.findById(id)
+                .orElseThrow(() -> new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND));
+
+        validateMove(registration, PaymentStatus.CANCELLED, RegistrationStatus.CANCELLED);
+
         registration.updatePaymentStatus(PaymentStatus.CANCELLED);
         registration.updateRegistrationStatus(RegistrationStatus.CANCELLED);
     }
 
     public void refundRegistration(Long id){
-        Registration registration=registrationRepository.findById(id).orElseThrow(()->new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND));
+        Registration registration = registrationRepository.findById(id)
+                .orElseThrow(() -> new CustomizedException(ErrorCode.REGISTRATION_NOT_FOUND));
+
+        validateMove(registration, PaymentStatus.REFUNDED, null);
+
         registration.updatePaymentStatus(PaymentStatus.REFUNDED);
     }
 
@@ -119,6 +133,19 @@ public class RegistrationService {
             throw new CustomizedException(ErrorCode.REGISTRATION_ALREADY_PAID);
         }
         registrationRepository.deleteById(id);
+    }
+
+    private void validateMove(Registration registration, PaymentStatus targetPayment, RegistrationStatus targetRegistration) {
+        PaymentStatus currentPayment = registration.getPaymentStatus();
+        RegistrationStatus currentRegistration = registration.getRegistrationStatus();
+
+        if (!currentPayment.canMoveTo(targetPayment)) {
+            throw new CustomizedException(ErrorCode.REGISTRATION_INVALID_PAYMENT_STATUS_FLOW);
+        }
+
+        if (targetRegistration != null && !currentRegistration.canMoveTo(targetRegistration)) {
+            throw new CustomizedException(ErrorCode.REGISTRATION_INVALID_REGISTRATION_STATUS_FLOW);
+        }
     }
 
     private Boolean isRegistered(String cckId, Long competitionId){
