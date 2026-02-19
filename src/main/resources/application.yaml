@@ -18,6 +18,8 @@ spring:
     api-key: ${MAIL_API_KEY}
 ranking:
   url: ${RANKING_URL}
+crypto:
+  aes-key: ${AES_SECRET}
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
   allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS

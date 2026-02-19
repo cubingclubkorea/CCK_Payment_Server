@@ -1,5 +1,6 @@
 package com.cubingclub.payment.Registration.Entity;
 
+import com.cubingclub.payment.Crypto.CryptoConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,13 +29,16 @@ public class Registration {
     private Long id;
     private String name;
     private String enName;
+    @Convert(converter = CryptoConverter.class)
     private String email;
+    @Convert(converter = CryptoConverter.class)
     private String phone;
     @Column(nullable = false)
     private String cckId;
     private String wcaId;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthDate;
+    @Convert(converter = CryptoConverter.class)
     private String emergencyPhone;
     private String emergencyContact;
     @Column(nullable = false)

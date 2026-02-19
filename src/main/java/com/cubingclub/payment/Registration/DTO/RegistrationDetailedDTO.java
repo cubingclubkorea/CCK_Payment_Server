@@ -49,6 +49,7 @@ public class RegistrationDetailedDTO {
         this.emergencyContact=entity.getEmergencyContact();
         this.selectedEvents=entity.getSelectedEvents();
         this.totalFee=entity.getTotalFee();
+        this.registrationStatus=entity.getRegistrationStatus();
         this.paymentStatus=entity.getPaymentStatus();
         this.selectedEvents=new ArrayList<>(entity.getSelectedEvents());
         this.needRfCard=entity.getNeedRfCard();

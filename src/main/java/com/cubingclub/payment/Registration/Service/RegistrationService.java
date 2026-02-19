@@ -56,6 +56,9 @@ public class RegistrationService {
     public void createRegistration(RegistrationCreateDTO registrationCreateDTO, String token){
         AccountDTO accountDTO=authService.getMyInfo(token);
         CompetitionDTO competitionDTO=clientComponent.getCompetitionDTO(registrationCreateDTO.getCompetitionId());
+        if(registrationRepository.findByCompetitionIdAndRegistrationStatusNot(registrationCreateDTO.getCompetitionId(), RegistrationStatus.CANCELLED).size()>competitionDTO.getMaxParticipate()){
+            throw new CustomizedException(ErrorCode.REGISTRATION_MAX_PARTICIPATE);
+        }
         if(isRegistered(accountDTO.getCckId(), registrationCreateDTO.getCompetitionId())){
             throw new CustomizedException(ErrorCode.REGISTRATION_ALREADY_EXISTS);
         }
