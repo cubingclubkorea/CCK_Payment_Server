@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    open-in-view: false
+  oauth:
+    uri: http://test-auth-server
+    id: test-client-id
+    secret: test-client-secret
+    redirect-uri: http://test-redirect
+  mail:
+    url: http://test-mail-server
+    api-key: test-api-key
+
+ranking:
+  url: http://test-ranking-server
+
+crypto:
+  aes-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+
+cors:
+  allowed-origins: http://localhost:3000
+  allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+
+api:
+  prefix: /api
