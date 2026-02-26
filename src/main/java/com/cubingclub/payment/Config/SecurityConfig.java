@@ -42,6 +42,11 @@ public class SecurityConfig{
     private String allowedOrigins;
     @Value("${cors.allowed-methods}")
     private String allowedMethods;
+    @Value("${api.prefix}")
+    private String apiPrefix;
+
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -53,22 +58,26 @@ public class SecurityConfig{
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(requestHandler)
                         .ignoringRequestMatchers(
-                                "/auth/token",           // 인가 코드로 토큰 발급 (GET 파라미터)
-                                "/registration/**"        // JWT 인증 사용
+                                apiPrefix+"/auth/token",           // 인가 코드로 토큰 발급 (GET 파라미터)
+                                apiPrefix+"/registration/**"        // JWT 인증 사용
                         )
                 )
                 .cors(cors->cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers(HttpMethod.GET,"/registration/user", "/registration/{id}").authenticated()
-                        .requestMatchers(HttpMethod.POST,"/registration").authenticated()
-                        .requestMatchers(HttpMethod.PATCH,"/registration/events", "/registration/{id}/cancel").authenticated()
-                        .requestMatchers(HttpMethod.PATCH,"/registration/{id}/approve","/registration/{id}/refund").hasAnyRole("ROOT","ADMIN")
-                        .requestMatchers(HttpMethod.DELETE,"/registration/**").hasAnyRole("ROOT","ADMIN")
+                        .requestMatchers(HttpMethod.GET,apiPrefix+"/registration/user", apiPrefix+"/registration/{id}").authenticated()
+                        .requestMatchers(HttpMethod.POST,apiPrefix+"/registration").authenticated()
+                        .requestMatchers(HttpMethod.PATCH,apiPrefix+"/registration/events", apiPrefix+"/registration/{id}/cancel").authenticated()
+                        .requestMatchers(HttpMethod.PATCH,apiPrefix+"/registration/{id}/approve",apiPrefix+"/registration/{id}/refund").hasAnyRole("ROOT","ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,apiPrefix+"/registration/**").hasAnyRole("ROOT","ADMIN")
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder())) // JWT 검증 필터링
+                        .authenticationEntryPoint(authenticationEntryPoint) // 401 처리
+                )
+                .exceptionHandling(exception -> exception
+                        .accessDeniedHandler(accessDeniedHandler) // 403 처리
                 );
         return http.build();
     }
